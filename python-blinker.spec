@@ -5,7 +5,7 @@
 
 Name:           python-blinker
 Version:        %{version}
-Release:        1
+Release:        2
 Group:          Development/Python
 Summary:        Fast, simple object-to-object and broadcast signaling
 
