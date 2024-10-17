@@ -10,7 +10,7 @@ Group:          Development/Python
 Summary:        Fast, simple object-to-object and broadcast signaling
 
 License:        MIT
-URL:            http://pythonhosted.org/blinker/
+URL:            https://pythonhosted.org/blinker/
 Source0:        https://pypi.python.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/%{pypi_name}-%{version}.tar.gz
 BuildArch:      noarch
 BuildRequires:  python3-devel
