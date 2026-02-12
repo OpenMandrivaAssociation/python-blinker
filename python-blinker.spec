@@ -1,94 +1,69 @@
-# Created by pyp2rpm-2.0.0
-%global pypi_name blinker
-%global with_python2 0
-%define version 1.4
+%define module blinker
+# NOTE Doc building depends on python modules: sphinxcontrib-log-cabinet and
+# NOTE pallets_sphinx_themes, neither of which we have packaged as of 12/02/2026.
+# NOTE Keep docs disabled until such a time as those BRs are packaged.
+%bcond docs 0
+%bcond tests 1
 
-Name:           python-blinker
-Version:        %{version}
-Release:        2
-Group:          Development/Python
-Summary:        Fast, simple object-to-object and broadcast signaling
-
-License:        MIT
-URL:            https://pythonhosted.org/blinker/
-Source0:        https://pypi.python.org/packages/1b/51/e2a9f3b757eb802f61dc1f2b09c8c99f6eb01cf06416c0671253536517b6/%{pypi_name}-%{version}.tar.gz
-BuildArch:      noarch
-BuildRequires:  python3-devel
-BuildRequires:  python-setuptools
-BuildRequires:  python-sphinx
- 
-%if %{?with_python2}
-BuildRequires:  python2-devel
-BuildRequires:  python2-setuptools
-BuildRequires:  python2-sphinx
-%endif # if with_python2
-
+Name:		python-blinker
+Version:	1.9.0
+Release:	1
+Summary:	Fast, simple object-to-object and broadcast signaling
+License:	MIT
+Group:		Development/Python
+URL:		https://pypi.org/project/blinker/
+Source0:	https://files.pythonhosted.org/packages/source/b/%{module}/%{module}-%{version}.tar.gz#/%{name}-%{version}.tar.gz
+BuildSystem:	python
+BuildArch:	noarch
+BuildRequires:	python
+BuildRequires:	pkgconfig(python3)
+BuildRequires:	python%{pyver}dist(flit-core)
+BuildRequires:	python%{pyver}dist(pip)
+BuildRequires:	python%{pyver}dist(wheel)
+%if %{with docs}
+BuildRequires:	python%{pyver}dist(sphinx)
+# Unpackaged
+#BuildRequires:	python%%{pyver}dist(sphinxcontrib-log-cabinet)
+#BuildRequires:	python%%{pyver}dist(pallets_sphinx_themes)
+%endif
+%if %{with tests}
+BuildRequires:	python%{pyver}dist(pytest)
+BuildRequires:	python%{pyver}dist(pytest-asyncio)
+%endif
 
 %description
-Blinker provides a fast dispatching system that allows any number of interested parties to subscribe to events, or “signals”.
+Blinker provides a fast dispatching system that allows any number
+of interested parties to subscribe to events, or “signals”.
 
-%if 0%{?with_python2}
-%package -n     python2-%{pypi_name}
-Summary:        Fast, simple object-to-object and broadcast signaling
-
-%description -n python2-%{pypi_name}
-Blinker provides a fast dispatching system that allows any number of interested parties to subscribe to events, or “signals”.
-%endif # with_python2
-
-
-%prep
-%setup -q -n %{pypi_name}-%{version}
+%prep -a
 # Remove bundled egg-info
-rm -rf %{pypi_name}.egg-info
+rm -rf %{module}.egg-info
 
-# generate html docs 
-sphinx-build -C docs/source html
-# remove the sphinx-build leftovers
-rm -rf html/.{doctrees,buildinfo}
+%if %{with docs}
+%install -a
+#Make buildroot docdir
+install -dpm 755 %{buildroot}%{_docdir}/%{name}
+# Use sphinx-build to build html docs into buildroot docdir,
+# Doc generation requires the module to be installed in order to run successfully.
+PYTHONPATH="%{buildroot}%{python_sitearch}:${PWD}" \
+    sphinx-build -b html docs %{buildroot}%{_docdir}/%{name}
+# remove .buildinfo and .doctrees
+rm -rf %{buildroot}%{_docdir}/%{name}/.buildinfo
+rm -rf %{buildroot}%{_docdir}/%{name}/.doctrees
+%endif
 
-%if 0%{?with_python2}
-rm -rf %{py2dir}
-cp -a . %{py2dir}
-find %{py2dir} -name '*.py' | xargs sed -i '1s|^#!python|#!%{__python2}|'
-# generate html docs 
-sphinx-build2 docs/source html
-# remove the sphinx-build leftovers
-rm -rf html/.{doctrees,buildinfo}
-
-%endif # with_python2
-
-
-%build
-%{__python3} setup.py build
-
-%if 0%{?with_python2}
-pushd %{py2dir}
-%{__python} setup.py build
-popd
-%endif # with_python2
-
-
-%install
-# Must do the subpackages' install first because the scripts in /usr/bin are
-# overwritten with every setup.py install (and we want the python2 version
-# to be the default for now).
-%if 0%{?with_python2}
-pushd %{py2dir}
-%{__python} setup.py install --skip-build --root %{buildroot}
-popd
-%endif # with_python2
-
-%{__python3} setup.py install --skip-build --root %{buildroot}
-
+%if %{with tests}
+%check
+export CI=true
+export PYTHONPATH="%{buildroot}%{python_sitelib}:${PWD}"
+pytest tests/
+%endif
 
 %files
-%doc html README.md LICENSE
-%{python_sitelib}/%{pypi_name}
-%{python_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
-%if 0%{?with_python2}
-%files -n python2-%{pypi_name}
-%doc html README.md LICENSE
-%{python2_sitelib}/%{pypi_name}
-%{python2_sitelib}/%{pypi_name}-%{version}-py?.?.egg-info
-%endif # with_python2
+%{python_sitelib}/%{module}
+%{python_sitelib}/%{module}-%{version}.dist-info
+%if %{with docs}
+%{_docdir}/%{name}
+%endif
+
 
